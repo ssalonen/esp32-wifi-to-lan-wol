@@ -171,8 +171,10 @@ removes only the time-of-day restriction and shortens the login grace.
 
 The service watches logind `SessionNew` events and checks existing sessions;
 a brief login followed by logout still cancels automation. Graphical, terminal,
-SSH and root sessions count; only sessions explicitly classified as `greeter`
-are excluded. A lock screen does not make an existing user session disappear.
+SSH and root login sessions count. Sessions explicitly classified as `greeter`,
+`manager`, or `manager-early` are excluded: these are login-screen or systemd
+user-manager infrastructure, not human logins. Unknown classes still cancel
+automation conservatively. A lock screen does not make an existing user session disappear.
 Unknown session state or failed monitoring cancels automation.
 
 Shutdown waits at least **ten minutes + 15 seconds from the first captured
@@ -322,7 +324,7 @@ above.
 Development verification: host C++ assertions and **18 Python tests pass**,
 including blocked login classification and packet arrival during final shutdown
 checks. The Ethernet-startup fix adds tests for a down interface and deferred
-packet capture; the current Python suite contains 21 tests. The updated systemd
+packet capture; the current Python suite contains 22 tests, including the GDM manager-session regression. The updated systemd
 unit passed `systemd-analyze verify`. Hardware end-to-end testing is still required.
 
 After updating the Linux listener or unit, reinstall both files and reload

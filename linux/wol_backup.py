@@ -114,8 +114,10 @@ class Policy:
 
 
 def is_human_session(properties):
-    # Include SSH, TTY, root, background and unknown classes conservatively.
-    return properties.get('Class') != 'greeter'
+    # Greeters and systemd user managers are background infrastructure, not
+    # authenticated human sessions. Actual SSH/TTY/graphical/root logins have
+    # separate user/user-early sessions; unknown classes still cancel safely.
+    return properties.get('Class') not in ('greeter', 'manager', 'manager-early')
 
 
 def run_checked(args):

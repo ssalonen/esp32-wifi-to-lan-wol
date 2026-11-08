@@ -147,6 +147,15 @@ class SessionTests(unittest.TestCase):
                       {'Class': 'background', 'User': '1000'}):
             self.assertTrue(wb.is_human_session(props))
 
+    def test_gdm_user_manager_is_not_a_human_login(self):
+        # logind creates a separate manager-early session for the GDM greeter.
+        self.assertFalse(wb.is_human_session({'Class': 'manager-early', 'User': '60578'}))
+        # User managers may also linger after the corresponding login ends.
+        self.assertFalse(wb.is_human_session({'Class': 'manager', 'User': '1000'}))
+        self.assertTrue(wb.is_human_session({'Class': 'user', 'User': '1000'}))
+        self.assertTrue(wb.is_human_session({'Class': 'user-early', 'User': '0'}))
+        self.assertTrue(wb.is_human_session({'Class': 'unknown-manager', 'User': '1000'}))
+
     def test_session_event_parser_catches_login_and_logout(self):
         parser = wb.SessionEventParser()
         lines = [
