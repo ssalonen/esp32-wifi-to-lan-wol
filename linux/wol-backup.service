@@ -7,11 +7,13 @@ JobTimeoutSec=30
 
 [Service]
 Type=notify
-NotifyAccess=main
+# Python sends READY=1 as a child of the sleep-inhibitor wrapper.
+# Expand NOTIFY_SOCKET here and restore it after systemd-inhibit clears it.
+NotifyAccess=all
 User=root
 EnvironmentFile=-/etc/default/wol-backup
 ExecStartPre=/usr/bin/ip link set dev enp0s31f6 up
-ExecStart=/usr/bin/python3 -u /usr/local/lib/wol-backup/wol_backup.py
+ExecStart=/usr/bin/systemd-inhibit --what=sleep --mode=block --who=wol-backup "--why=Unattended backup and WoL holdoff" /usr/bin/env NOTIFY_SOCKET=${NOTIFY_SOCKET} /usr/bin/python3 -u /usr/local/lib/wol-backup/wol_backup.py
 RuntimeDirectory=wol-backup
 RuntimeDirectoryMode=0700
 RuntimeDirectoryPreserve=yes

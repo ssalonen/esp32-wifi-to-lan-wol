@@ -183,7 +183,14 @@ daily transmit window plus a margin. This conservatively overestimates the
 remaining burst. A fast backup can therefore finish well before shutdown.
 Even in test mode, the complete wake/holdoff test takes roughly 10–11 minutes,
 not 24 hours. Login checks continue throughout this wait and run again before
-poweroff. Shutdown inhibitors are respected. A login exactly concurrent with
+poweroff. The systemd service holds a **sleep-only block inhibitor** for its
+entire lifetime, including login grace, backup, and transmission holdoff. This
+prevents GDM's login-screen auto-suspend from interrupting an unattended backup;
+login-screen power preferences are separate from your logged-in GNOME settings.
+The inhibitor is released when the service and its processes exit, including
+cancellation, error, or service stop. It also applies in dry-run. It does not
+block the service's guarded poweroff or change global desktop sleep settings.
+Shutdown inhibitors are respected. A login exactly concurrent with
 the final poweroff request remains a small race; this does not lock out logins.
 
 At most one automation attempt is permitted per boot. `/run/wol-backup/claimed`
@@ -199,7 +206,7 @@ service does not alter those settings.
 ## Install Linux files
 
 Requirements: systemd/logind, Python **3.9+** with timezone data for
-`Europe/Helsinki`, `loginctl`, `systemctl` supporting `--check-inhibitors=yes`,
+`Europe/Helsinki`, `loginctl`, `systemd-inhibit`, `systemctl` supporting `--check-inhibitors=yes`,
 `dbus-monitor`, and coreutils `stdbuf`. No Python packages are required.
 SSH/console/desktop login must create logind sessions (normal PAM/systemd setup).
 Untracked custom login mechanisms cannot be guarded.
@@ -338,3 +345,27 @@ sudo systemctl daemon-reload
 
 Do not reset the once-per-boot claim to retry after a failed boot; reboot for a
 clean test. The ESP32 every-boot-test firmware needs no changes for this fix.
+
+To inspect the backup service's temporary sleep lock while it is running:
+
+```sh
+systemd-inhibit --list
+```
+
+Look for `wol-backup`, `sleep`, and `block`. It disappears when the service
+finishes. After a unit-only update, install the new unit and reload systemd;
+there is no need to reflash ESP32 or change `/etc/default/wol-backup`:
+
+```sh
+sudo install -m 644 linux/wol-backup.service /etc/systemd/system/wol-backup.service
+sudo systemctl daemon-reload
+```
+
+Do not restart a completed automation attempt in the same boot; the next
+scheduled boot will acquire the lock before normal login services start.
+
+Sleep-inhibitor verification used a harmless transient notify service with the
+same wrapper: the child sent readiness successfully, a `sleep`/`block` lock
+was visible while running, and the lock disappeared on exit. The unit restores
+`NOTIFY_SOCKET` explicitly after the inhibitor wrapper, since current systemd
+versions remove it from the child's inherited environment.
