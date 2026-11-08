@@ -1,0 +1,7 @@
+# 0 = daily 13:00-13:10 Europe/Helsinki trigger, 300-second login grace.
+# 1 = any-time trigger within first ten minutes of boot, 30-second login grace.
+WOL_BACKUP_TEST_MODE=0
+
+# Ship in dry-run: /bin/true replaces the real backup; poweroff is only logged.
+# Set to 0 after checking the dry-run journal to enable real backup AND poweroff.
+WOL_BACKUP_DRY_RUN=1

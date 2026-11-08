@@ -1,0 +1,25 @@
+[Unit]
+Description=Unattended backup after scheduled wired Wake-on-LAN
+Requires=systemd-logind.service dbus.service sys-subsystem-net-devices-enp0s31f6.device
+After=systemd-logind.service dbus.service sys-subsystem-net-devices-enp0s31f6.device
+Before=systemd-user-sessions.service display-manager.service ssh.service sshd.service
+JobTimeoutSec=30
+
+[Service]
+Type=notify
+NotifyAccess=main
+User=root
+EnvironmentFile=-/etc/default/wol-backup
+ExecStartPre=/usr/bin/ip link set dev enp0s31f6 up
+ExecStart=/usr/bin/python3 -u /usr/local/lib/wol-backup/wol_backup.py
+RuntimeDirectory=wol-backup
+RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=yes
+TimeoutStartSec=20
+TimeoutStopSec=30
+Restart=no
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

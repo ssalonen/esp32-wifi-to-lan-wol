@@ -1,0 +1,9 @@
+.pio/
+include/secrets.h
+__pycache__/
+*.pyc
+.vscode/
+.agents/
+.codex/
+.aws/
+docs/superpowers/
